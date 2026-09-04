@@ -2,7 +2,9 @@
 
 One run a day at a revolver, and a dice game to spend what you survive with.
 
-**[Play the revolver →](https://anas1412.github.io/discord-russian-roulette/)** — the landing page runs the real game logic in your browser.
+**[Add to your server →](https://discord.com/oauth2/authorize?client_id=484661766895304734&permissions=0&scope=bot+applications.commands)** · **[Website](https://anas1412.github.io/discord-russian-roulette/)**
+
+The bot asks for no permissions — it only replies to its own slash commands.
 
 ## The rules
 
