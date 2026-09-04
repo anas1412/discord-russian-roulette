@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Russian Roulette — a Discord bot you can only play once a day</title>
+<meta name="description" content="One pull a day. Survive and your pot doubles, but another bullet goes in the cylinder. A Discord gambling bot built with Bun and discord.js.">
+<meta property="og:title" content="Russian Roulette — a Discord bot">
+<meta property="og:description" content="One pull a day. Survive and your pot doubles, but another bullet goes in the cylinder.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%230C1013' stroke='%23D9A441' stroke-width='2'/><circle cx='16' cy='8' r='3.4' fill='%23D9A441'/><circle cx='23' cy='12' r='3.4' fill='%231C252D'/><circle cx='23' cy='20' r='3.4' fill='%231C252D'/><circle cx='16' cy='24' r='3.4' fill='%231C252D'/><circle cx='9' cy='20' r='3.4' fill='%231C252D'/><circle cx='9' cy='12' r='3.4' fill='%231C252D'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Chivo:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --steel-900:#0C1013; --steel-850:#101820; --steel-800:#131A20; --steel-700:#1C252D;
+  --steel-600:#2A353F; --brass:#D9A441; --brass-dim:#8A6B2E; --oxblood:#B03A2E;
+  --bone:#EDE7DA; --ash:#8496A3;
+  --display:"Big Shoulders Display",Impact,sans-serif;
+  --body:"Chivo",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --edge:1px solid var(--steel-600);
+  --pad:clamp(1.25rem,5vw,2.5rem);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--steel-900); color:var(--bone);
+  font-family:var(--body); font-size:clamp(1rem,.96rem + .2vw,1.0625rem); line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(ellipse 80% 55% at 50% -10%,rgba(217,164,65,.10),transparent 70%);
+  background-repeat:no-repeat;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 var(--pad)}
+h1,h2,h3{font-family:var(--display);font-weight:800;text-transform:uppercase;line-height:.92;letter-spacing:.005em;margin:0}
+h2{font-size:clamp(2rem,5.5vw,3.25rem)}
+h3{font-size:1.4rem;letter-spacing:.02em}
+p{margin:0 0 1rem}
+a{color:var(--brass)}
+:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:2px}
+
+/* eyebrow: mono label, used to mark every section */
+.eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--brass-dim);margin:0 0 .9rem;display:flex;align-items:center;gap:.7rem}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--steel-600)}
+
+/* ---------- masthead ---------- */
+.masthead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.6rem 1rem;padding:1.4rem 0;font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ash);border-bottom:var(--edge)}
+.masthead a{color:var(--ash);text-decoration:none;white-space:nowrap}
+.masthead a:hover{color:var(--brass)}
+.mark{color:var(--bone)}
+.mark b{color:var(--brass);font-weight:700}
+
+/* ---------- hero ---------- */
+.hero{display:grid;grid-template-columns:1fr;gap:clamp(2rem,6vw,4rem);padding:clamp(3rem,8vw,5.5rem) 0 clamp(2.5rem,6vw,4rem);align-items:center}
+@media(min-width:900px){.hero{grid-template-columns:1.05fr .95fr}}
+h1{font-size:clamp(3.6rem,13vw,7.5rem);font-weight:900}
+h1 .dead{color:var(--oxblood)}
+.lede{font-size:clamp(1.05rem,1rem + .5vw,1.3rem);color:var(--ash);max-width:42ch;margin:1.4rem 0 0}
+.lede b{color:var(--bone);font-weight:600}
+.cta-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2rem}
+.btn{font-family:var(--mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;padding:.9rem 1.5rem;border:var(--edge);background:transparent;color:var(--bone);text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.btn:hover{border-color:var(--brass);color:var(--brass)}
+.btn-primary{background:var(--brass);border-color:var(--brass);color:#100C04;font-weight:700}
+.btn-primary:hover{background:#E9B855;border-color:#E9B855;color:#100C04}
+
+/* ---------- the revolver (signature) ---------- */
+.machine{border:var(--edge);background:linear-gradient(180deg,var(--steel-850),var(--steel-900));padding:clamp(1.25rem,4vw,2rem)}
+.readout{display:grid;grid-template-columns:1fr 1fr 1fr;border:var(--edge);margin-bottom:1.5rem}
+.cell{padding:.85rem .5rem;text-align:center;border-right:var(--edge)}
+.cell:last-child{border-right:0}
+.cell dt{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);margin:0 0 .35rem}
+.cell dd{font-family:var(--mono);font-size:clamp(1.1rem,3.5vw,1.45rem);font-weight:700;margin:0;color:var(--bone);font-variant-numeric:tabular-nums}
+#odds{color:var(--brass)}
+.cylinder-stage{display:flex;justify-content:center;padding:.5rem 0 1.25rem}
+#cyl{width:min(260px,62vw);height:auto}
+#cylGroup{transform-origin:100px 100px;transition:transform .55s cubic-bezier(.22,1,.36,1)}
+.chamber{fill:var(--steel-700);stroke:var(--steel-600);stroke-width:1.5;transition:fill .3s}
+.chamber.live{fill:var(--brass);stroke:#F0C468}
+.chamber.hit{fill:var(--oxblood);stroke:#D9584A}
+.log{font-family:var(--mono);font-size:.78rem;text-align:center;min-height:2.6em;display:flex;align-items:center;justify-content:center;color:var(--ash);padding:0 .5rem;margin-bottom:1.1rem;line-height:1.4}
+.log.win{color:var(--brass)} .log.death{color:var(--oxblood)}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.controls .btn{width:100%;text-align:center;padding:.9rem .5rem;font-size:.72rem;letter-spacing:.1em}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+.btn:disabled:hover{border-color:var(--steel-600);color:var(--bone)}
+.btn-fire{border-color:var(--oxblood);color:#E4796C}
+.btn-fire:hover:not(:disabled){background:var(--oxblood);color:var(--bone);border-color:var(--oxblood)}
+.disclaimer{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--steel-600);text-align:center;margin:1rem 0 0}
+
+/* ---------- sections ---------- */
+section{padding:clamp(3.5rem,9vw,6rem) 0;border-top:var(--edge)}
+.section-intro{color:var(--ash);max-width:56ch;margin-top:1.2rem}
+
+/* ladder: a real sequence, so it is numbered */
+.ladder-scroll{overflow-x:auto;margin-top:2.5rem;-webkit-overflow-scrolling:touch}
+.ladder{width:100%;min-width:30rem;border-collapse:collapse;font-family:var(--mono);font-size:.82rem}
+.ladder th{text-align:left;font-weight:400;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);padding:0 .6rem .8rem;border-bottom:var(--edge)}
+.ladder td{padding:.85rem .6rem;border-bottom:1px solid rgba(42,53,63,.5);font-variant-numeric:tabular-nums}
+.ladder tr:last-child td{border-bottom:0}
+.ladder .n{color:var(--brass-dim)}
+/* Group pull/cylinder/odds tightly on the left; let the bar absorb the slack. */
+.ladder th:nth-child(1),.ladder td:nth-child(1){width:3.5rem}
+.ladder th:nth-child(2),.ladder td:nth-child(2){width:8.5rem}
+.ladder th:nth-child(3),.ladder td:nth-child(3){width:6rem}
+.ladder th:nth-child(5),.ladder td:nth-child(5){text-align:right;white-space:nowrap}
+.ladder .pot{color:var(--brass);font-weight:700}
+.ladder .final td{color:var(--oxblood)}
+.ladder .final .pot{color:var(--oxblood)}
+.dots{white-space:nowrap;letter-spacing:.1em}
+.dots i{font-style:normal;color:var(--steel-600)}
+.dots i.on{color:var(--brass)}
+.ladder .final .dots i.on{color:var(--oxblood)}
+.bar{display:block;height:3px;background:var(--steel-700);position:relative;min-width:56px}
+.bar span{position:absolute;inset:0 auto 0 0;background:var(--brass)}
+.final .bar span{background:var(--oxblood)}
+
+/* rule cards */
+.grid{display:grid;gap:1px;background:var(--steel-600);border:var(--edge);margin-top:2.5rem}
+@media(min-width:760px){.grid.three{grid-template-columns:repeat(3,1fr)}.grid.two{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--steel-900);padding:clamp(1.4rem,3.5vw,2rem)}
+.card .num{font-family:var(--mono);font-size:.65rem;letter-spacing:.16em;color:var(--brass-dim);display:block;margin-bottom:1rem}
+.card h3{margin-bottom:.7rem}
+.card p{color:var(--ash);margin:0;font-size:.94rem}
+.card p b{color:var(--bone);font-weight:600}
+.card.danger h3{color:var(--oxblood)}
+
+/* payout list */
+.payouts{list-style:none;padding:0;margin:2.5rem 0 0;border-top:var(--edge)}
+.payouts li{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding:1.1rem .2rem;border-bottom:var(--edge);font-family:var(--mono);font-size:.88rem}
+.payouts .what{color:var(--bone)}
+.payouts .mult{color:var(--brass);font-weight:700;white-space:nowrap}
+.payouts .mult.zero{color:var(--oxblood)}
+.payouts .mult.push{color:var(--ash)}
+
+/* commands */
+.cmds{margin-top:2.5rem;border:var(--edge)}
+.cmd{display:grid;grid-template-columns:1fr;gap:.3rem;padding:1.15rem clamp(1rem,3vw,1.5rem);border-bottom:var(--edge)}
+.cmd:last-child{border-bottom:0}
+@media(min-width:700px){.cmd{grid-template-columns:16rem 1fr;gap:1.5rem;align-items:baseline}}
+.cmd code{font-family:var(--mono);color:var(--brass);font-size:.9rem}
+.cmd span{color:var(--ash);font-size:.94rem}
+
+/* setup */
+pre{background:var(--steel-850);border:var(--edge);padding:1.25rem;overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.8;margin:0;color:var(--bone)}
+pre .c{color:var(--ash)}
+pre .p{color:var(--brass-dim);user-select:none}
+.steps{counter-reset:s;list-style:none;padding:0;margin:2.5rem 0 0;display:grid;gap:1.5rem}
+.steps li{padding-left:2.6rem;position:relative}
+.steps li::before{counter-increment:s;content:counter(s,decimal-leading-zero);position:absolute;left:0;top:.1rem;font-family:var(--mono);font-size:.75rem;color:var(--brass-dim);letter-spacing:.1em}
+.steps h3{font-size:1.05rem;margin-bottom:.5rem;letter-spacing:.04em}
+.steps p{color:var(--ash);font-size:.94rem;margin-bottom:.8rem}
+
+footer{border-top:var(--edge);padding:2.5rem 0 3.5rem;font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between}
+footer a{color:var(--ash);text-decoration:none}
+footer a:hover{color:var(--brass)}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="masthead">
+    <span class="mark">RUSSIAN <b>ROULETTE</b></span>
+    <nav><a href="#odds-ladder">Odds</a> &nbsp; <a href="#dice">Dice</a> &nbsp; <a href="#setup">Self-host</a></nav>
+  </header>
+
+  <div class="hero">
+    <div>
+      <p class="eyebrow">One pull per day</p>
+      <h1>Double it<br>or <span class="dead">die</span></h1>
+      <p class="lede">You get <b>one run every 24 hours</b>. Survive a pull and your pot doubles — but another bullet goes into the cylinder. Walk away, or find the sixth chamber.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#setup">Self-host the bot</a>
+        <a class="btn" href="https://github.com/anas1412/discord-russian-roulette">View source</a>
+      </div>
+    </div>
+
+    <!-- Signature element: the real game, same logic as the bot -->
+    <div class="machine">
+      <dl class="readout">
+        <div class="cell"><dt>Pot</dt><dd id="pot">100</dd></div>
+        <div class="cell"><dt>Survived</dt><dd id="survived">0</dd></div>
+        <div class="cell"><dt>Death odds</dt><dd id="odds">17%</dd></div>
+      </dl>
+
+      <div class="cylinder-stage">
+        <svg id="cyl" viewBox="0 0 200 200" role="img" aria-labelledby="cylTitle">
+          <title id="cylTitle">Revolver cylinder with six chambers</title>
+          <circle cx="100" cy="100" r="92" fill="#131A20" stroke="#2A353F" stroke-width="2"/>
+          <g id="cylGroup">
+            <circle class="chamber" cx="100" cy="42"  r="21"/>
+            <circle class="chamber" cx="150" cy="71"  r="21"/>
+            <circle class="chamber" cx="150" cy="129" r="21"/>
+            <circle class="chamber" cx="100" cy="158" r="21"/>
+            <circle class="chamber" cx="50"  cy="129" r="21"/>
+            <circle class="chamber" cx="50"  cy="71"  r="21"/>
+          </g>
+          <circle cx="100" cy="100" r="15" fill="#0C1013" stroke="#2A353F" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <p class="log" id="log" role="status" aria-live="polite">One bullet. Six chambers. Your call.</p>
+
+      <div class="controls">
+        <button class="btn btn-fire" id="fire">Pull the trigger</button>
+        <button class="btn" id="cash">Cash out</button>
+      </div>
+      <p class="disclaimer">Playable demo — no money, nothing saved</p>
+    </div>
+  </div>
+</div>
+
+<section id="odds-ladder">
+  <div class="wrap">
+    <p class="eyebrow">The ladder</p>
+    <h2>Every survival<br>loads another round</h2>
+    <p class="section-intro">The cylinder never empties. Each pull you live through doubles the pot and adds a bullet, so the sixth pull is not a gamble at all — it is a guarantee. Five survivals is the ceiling: <b>×32</b>.</p>
+
+    <div class="ladder-scroll">
+    <table class="ladder">
+      <thead>
+        <tr><th>Pull</th><th>Cylinder</th><th>Death odds</th><th></th><th>Pot if you live</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="n">01</td><td class="dots"><i class="on">●</i><i>●</i><i>●</i><i>●</i><i>●</i><i>●</i></td><td>17%</td><td><span class="bar"><span style="width:17%"></span></span></td><td class="pot">200 &nbsp;×2</td></tr>
+        <tr><td class="n">02</td><td class="dots"><i class="on">●</i><i class="on">●</i><i>●</i><i>●</i><i>●</i><i>●</i></td><td>33%</td><td><span class="bar"><span style="width:33%"></span></span></td><td class="pot">400 &nbsp;×4</td></tr>
+        <tr><td class="n">03</td><td class="dots"><i class="on">●</i><i class="on">●</i><i class="on">●</i><i>●</i><i>●</i><i>●</i></td><td>50%</td><td><span class="bar"><span style="width:50%"></span></span></td><td class="pot">800 &nbsp;×8</td></tr>
+        <tr><td class="n">04</td><td class="dots"><i class="on">●</i><i class="on">●</i><i class="on">●</i><i class="on">●</i><i>●</i><i>●</i></td><td>67%</td><td><span class="bar"><span style="width:67%"></span></span></td><td class="pot">1,600 &nbsp;×16</td></tr>
+        <tr><td class="n">05</td><td class="dots"><i class="on">●</i><i class="on">●</i><i class="on">●</i><i class="on">●</i><i class="on">●</i><i>●</i></td><td>83%</td><td><span class="bar"><span style="width:83%"></span></span></td><td class="pot">3,200 &nbsp;×32</td></tr>
+        <tr class="final"><td class="n">06</td><td class="dots"><i class="on">●</i><i class="on">●</i><i class="on">●</i><i class="on">●</i><i class="on">●</i><i class="on">●</i></td><td>100%</td><td><span class="bar"><span style="width:100%"></span></span></td><td class="pot">Nothing</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Three rules that make it hurt</p>
+    <h2>The catch</h2>
+    <div class="grid three">
+      <div class="card">
+        <span class="num">RULE 01</span>
+        <h3>One run a day</h3>
+        <p>The revolver resets at <b>midnight UTC+1</b>. Die on your first pull and that is your whole day — there is no second attempt, no buying back in.</p>
+      </div>
+      <div class="card">
+        <span class="num">RULE 02</span>
+        <h3>Winnings sit overnight</h3>
+        <p>Cashing out moves money to <b>pending</b>. It only becomes spendable at the next reset, so you can never gamble today's winnings on today's dice.</p>
+      </div>
+      <div class="card danger">
+        <span class="num">RULE 03</span>
+        <h3>The sixth is certain</h3>
+        <p>After five survivals every chamber is loaded. The bot still offers the pull, labelled <b>certain death</b> — because hiding the option would be a lie about the odds.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="dice">
+  <div class="wrap">
+    <p class="eyebrow">Side hustle</p>
+    <h2>High Roll</h2>
+    <p class="section-intro">Permanent money is not just a score. Stake it against the bot: you both roll a die, higher roll takes it. Capped at <b>five rolls a day</b>, so it is a side hustle, not a printer.</p>
+    <ul class="payouts">
+      <li><span class="what">Beat the bot</span><span class="mult">×2</span></li>
+      <li><span class="what">Win while showing a six</span><span class="mult">×3 &nbsp;jackpot</span></li>
+      <li><span class="what">Tie</span><span class="mult push">stake returned</span></li>
+      <li><span class="what">Lose</span><span class="mult zero">×0</span></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">In the server</p>
+    <h2>Four commands</h2>
+    <div class="cmds">
+      <div class="cmd"><code>/roulette</code><span>Start or resume today's run. Fire and cash-out buttons, locked to you.</span></div>
+      <div class="cmd"><code>/dice bet:&lt;amount&gt;</code><span>Play High Roll with permanent money.</span></div>
+      <div class="cmd"><code>/balance</code><span>Your money, today's run, rolls left, lifetime stats. Only you see it.</span></div>
+      <div class="cmd"><code>/leaderboard</code><span>Top ten by permanent and pending money.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="setup">
+  <div class="wrap">
+    <p class="eyebrow">Run your own</p>
+    <h2>Self-host<br>in four steps</h2>
+    <p class="section-intro">Needs <a href="https://bun.sh">Bun</a>. Storage is a single SQLite file through <code style="font-family:var(--mono);color:var(--brass)">bun:sqlite</code>, so there is nothing to compile and no database to stand up.</p>
+
+    <ol class="steps">
+      <li>
+        <h3>Clone and install</h3>
+        <pre><span class="p">$</span> git clone https://github.com/anas1412/discord-russian-roulette
+<span class="p">$</span> cd discord-russian-roulette
+<span class="p">$</span> bun install</pre>
+      </li>
+      <li>
+        <h3>Add your credentials</h3>
+        <p>Take the token from <b>Bot → Reset Token</b> and the client ID from <b>General Information</b> in the Discord Developer Portal.</p>
+        <pre><span class="p">$</span> cp .env.example .env
+<span class="c"># DISCORD_TOKEN=...</span>
+<span class="c"># DISCORD_CLIENT_ID=...</span></pre>
+      </li>
+      <li>
+        <h3>Register the commands</h3>
+        <p>Set <code style="font-family:var(--mono);color:var(--brass)">DISCORD_GUILD_ID</code> while developing and they appear instantly. Leave it empty to go global, which takes up to an hour.</p>
+        <pre><span class="p">$</span> bun run deploy</pre>
+      </li>
+      <li>
+        <h3>Start it</h3>
+        <p>Invite the bot with the <b>bot</b> and <b>applications.commands</b> scopes. No privileged intents needed.</p>
+        <pre><span class="p">$</span> bun start</pre>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <span>Bun · discord.js · bun:sqlite</span>
+    <span><a href="https://github.com/anas1412/discord-russian-roulette">github.com/anas1412/discord-russian-roulette</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // Same rules as the bot: bullets = survivals + 1, chamber <= bullets is fatal.
+  var BASE = 100, CHAMBERS = 6, MAX = 5;
+  var survivals = 0, over = false, spin = 0;
+
+  var potEl = document.getElementById("pot"),
+      survEl = document.getElementById("survived"),
+      oddsEl = document.getElementById("odds"),
+      logEl = document.getElementById("log"),
+      fireEl = document.getElementById("fire"),
+      cashEl = document.getElementById("cash"),
+      group = document.getElementById("cylGroup"),
+      chambers = [].slice.call(document.querySelectorAll(".chamber"));
+
+  var pot = function () { return BASE * Math.pow(2, survivals); };
+  var fmt = function (n) { return n.toLocaleString("en-US"); };
+
+  function paint(hitIndex) {
+    var bullets = survivals + 1;
+    chambers.forEach(function (c, i) {
+      c.classList.toggle("live", i < bullets && i !== hitIndex);
+      c.classList.toggle("hit", i === hitIndex);
+    });
+    potEl.textContent = fmt(pot());
+    survEl.textContent = survivals;
+    oddsEl.textContent = Math.round(bullets / CHAMBERS * 100) + "%";
+  }
+
+  function say(text, kind) {
+    logEl.textContent = text;
+    logEl.className = "log" + (kind ? " " + kind : "");
+  }
+
+  function end() {
+    over = true;
+    fireEl.disabled = cashEl.disabled = true;
+    setTimeout(function () {
+      cashEl.disabled = false;
+      cashEl.textContent = "Play again";
+      cashEl.onclick = reset;
+    }, 900);
+  }
+
+  function reset() {
+    survivals = 0; over = false;
+    fireEl.disabled = false;
+    fireEl.textContent = "Pull the trigger";
+    cashEl.disabled = false;
+    cashEl.textContent = "Cash out";
+    cashEl.onclick = cashOut;
+    oddsEl.style.color = "";
+    potEl.style.color = "";
+    say("One bullet. Six chambers. Your call.");
+    paint(-1);
+  }
+
+  function cashOut() {
+    if (over) return;
+    var won = pot(), n = survivals;
+    end();
+    say("Walked away with " + fmt(won) + " after " + n + (n === 1 ? " survival" : " survivals") + ".", "win");
+  }
+
+  fireEl.onclick = function () {
+    if (over) return;
+    var bullets = survivals + 1;
+    var roll = Math.floor(Math.random() * CHAMBERS) + 1;
+    spin += 360 + roll * 60;
+    group.style.transform = "rotate(" + spin + "deg)";
+
+    fireEl.disabled = true;
+    setTimeout(function () {
+      if (roll <= bullets) {
+        var lost = pot();
+        paint(roll - 1);
+        potEl.textContent = "0";
+        potEl.style.color = "var(--oxblood)";
+        oddsEl.style.color = "var(--oxblood)";
+        end();
+        say("Bang. Chamber " + roll + " was loaded. You lose " + fmt(lost) + ".", "death");
+      } else {
+        survivals++;
+        paint(-1);
+        fireEl.disabled = false;
+        if (survivals >= MAX) {
+          fireEl.textContent = "Pull (certain death)";
+          say("Click. Pot is " + fmt(pot()) + ". Every chamber is loaded now — cash out.", "win");
+        } else {
+          say("Click. Chamber " + roll + " was empty. Pot doubled to " + fmt(pot()) + ".", "win");
+        }
+      }
+    }, 560);
+  };
+
+  cashEl.onclick = cashOut;
+  paint(-1);
+})();
+</script>
+</body>
+</html>
