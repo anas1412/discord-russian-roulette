@@ -22,11 +22,16 @@ console.log(`Discord confirmed ${registered.length} command(s):`);
 for (const c of registered) console.log(`  /${c.name}  (id ${c.id})`);
 
 if (guildId) {
-  console.log(`\nRegistered to guild ${guildId}. They appear immediately.`);
+  console.log(
+    `\nRegistered to guild ${guildId} ONLY. They appear there immediately,\n` +
+      "but not in any other server. This is a testing shortcut -- for a public\n" +
+      "bot, clear DISCORD_GUILD_ID so the commands register globally instead.\n" +
+      "Note: a command registered both ways shows up twice in this server.",
+  );
 } else {
   console.log(
-    "\nRegistered GLOBALLY. These can take up to an hour to show up.\n" +
-      "To test now, put a server id in DISCORD_GUILD_ID and run this again.",
+    "\nRegistered GLOBALLY -- available in every server the bot is in, now and\n" +
+      "in future. Discord caches these, so an update can take a while to show.",
   );
 }
 console.log(
