@@ -92,6 +92,9 @@ intents are needed — it only uses `Guilds`.
 - Dice and chambers use rejection-sampled `crypto.getRandomValues`, not
   `Math.random() % 6`, so every face is exactly equally likely.
 - Data lives in one SQLite file (`DATABASE_PATH`, default `./roulette.db`).
+- Idle memory is kept low for small hosts: `bun --smol` shrinks the runtime
+  heap, and every discord.js cache the bot does not read is set to zero, so
+  memory stays flat as it joins more servers instead of climbing with them.
 - **Run a single bot instance per database file.** Handlers read and write a
   player without an `await` in between, so they are atomic on one event loop,
   but two processes sharing a file would lose updates to each other.
