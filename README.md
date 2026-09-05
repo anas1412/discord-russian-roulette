@@ -71,9 +71,11 @@ to compile.
 ```bash
 bun install
 cp .env.example .env    # then fill in DISCORD_TOKEN and DISCORD_CLIENT_ID
-bun run deploy          # register the slash commands
-bun start
+bun run deploy && bun start
 ```
+
+Note the `&&`. A single `&` backgrounds the deploy and starts the bot at the
+same time, so you cannot tell whether the commands registered.
 
 Get both values from the [Discord Developer Portal](https://discord.com/developers/applications):
 the token under **Bot → Reset Token**, the client ID under **General Information**.
@@ -90,6 +92,11 @@ intents are needed — it only uses `Guilds`.
 - Dice and chambers use rejection-sampled `crypto.getRandomValues`, not
   `Math.random() % 6`, so every face is exactly equally likely.
 - Data lives in one SQLite file (`DATABASE_PATH`, default `./roulette.db`).
+- **Run a single bot instance per database file.** Handlers read and write a
+  player without an `await` in between, so they are atomic on one event loop,
+  but two processes sharing a file would lose updates to each other.
+- `bun run deploy` never opens the database, so it is safe to run while the bot
+  is live.
 
 ```bash
 bun test
