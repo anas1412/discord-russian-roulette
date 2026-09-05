@@ -3,7 +3,7 @@ import { leaderboard } from "../db.js";
 import { COLORS, money } from "../format.js";
 
 export const data = new SlashCommandBuilder()
-  .setName("leaderboard")
+  .setName("top")
   .setDescription("Who's actually walking away with the money.");
 
 const MEDALS = ["🥇", "🥈", "🥉"];

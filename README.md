@@ -61,7 +61,7 @@ applied the next time a player is touched, so there is no scheduled job.
 | `/roulette` | Start or resume today's run. Fire / Cash out buttons. |
 | `/dice bet:<amount>` | Play High Roll with permanent money. |
 | `/balance` | Your money, today's run, rolls left, lifetime stats. (Private) |
-| `/leaderboard` | Top 10 by permanent + pending. |
+| `/top` | Top 10 by permanent + pending. |
 
 ## Setup
 
